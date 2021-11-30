@@ -1,0 +1,9 @@
+{
+    "_num_labels": 2,
+    "vocab_size": 8554,
+    "max_length": 20,
+    "padding": "max_length",
+    "glove_matched": 7642,
+    "glove_missed": 912,
+    "training_time": 8.007
+}
