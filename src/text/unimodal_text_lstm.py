@@ -9,29 +9,34 @@ from tensorflow import keras
 import pandas as pd
 import json
 from sklearn.model_selection import train_test_split
-from src.utils.text_utils import remove_punctuations, remove_stopwords, build_word_set
-from src.utils.utils import show_interactive_performance_plot
+from text_utils import remove_punctuations, remove_stopwords, build_word_set
+from utils import show_interactive_performance_plot
+
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 start_time = time.time()
 config = dict()
+scores = dict()
 df = pd.read_csv('/Users/amansolanki/PycharmProjects/hateful-memes-challenge/data/train.csv')
+
+EPOCHS = 50
 
 # Features and Labels
 text = df['text']
 label = df['label']
+
 config['_num_labels'] = label.nunique()
 
 # Train Test Split
-X_train, X_val, y_train, y_val = train_test_split(text, label, test_size=0.1, random_state=42, shuffle=True)
+X_train, X_val, y_train, y_val = train_test_split(text, label, test_size=0.2, random_state=42, shuffle=True)
 
 # Clean Training Data
 temp_train = X_train.map(remove_punctuations)
 X_train_clean = temp_train.map(remove_stopwords)
 # Clean Validation Data
 temp_test = X_val.map(remove_punctuations)
-X_test_clean = temp_test.map(remove_stopwords)
+X_val_clean = temp_test.map(remove_stopwords)
 
 # Build Vocabulary
 word_set = build_word_set(X_train_clean.to_list())
@@ -42,7 +47,7 @@ config['vocab_size'] = num_unique_words
 train_sentences = X_train_clean.to_numpy()
 train_labels = keras.utils.to_categorical(y_train, 2)
 # Prepare Validation Data
-val_sentences = X_val.to_numpy()
+val_sentences = X_val_clean.to_numpy()
 val_labels = keras.utils.to_categorical(y_val, 2)
 
 # Initialize Text Tokenizer
@@ -93,37 +98,56 @@ for word, i in word_index.items():
 config['glove_matched'] = hits
 config['glove_missed'] = misses
 
+
 # Model
 model = keras.models.Sequential()
-model.add(layers.Embedding(num_tokens,
-                           embedding_dim,
+
+model.add(layers.Embedding(input_dim=num_tokens,
+                           output_dim=embedding_dim,
+                           input_length=max_length,
                            embeddings_initializer=keras.initializers.Constant(embedding_matrix),
                            trainable=False))
 
-model.add(layers.LSTM(128, dropout=0.1, return_sequences=True))
-model.add(layers.LSTM(128, dropout=0.1))
+# model.add(layers.Embedding(input_dim=num_unique_words, output_dim=512, input_length=max_length))
+model.add(layers.LSTM(8, return_sequences=True, kernel_regularizer='l2'))
+model.add(layers.LSTM(8, dropout=0.2, kernel_regularizer='l2'))
 model.add(keras.layers.Flatten())
-model.add(keras.layers.Dense(128, activation='relu'))
-model.add(layers.Dropout(0.2))
-model.add(keras.layers.Dense(64, activation='relu'))
+model.add(keras.layers.Dense(32, activation='relu', kernel_regularizer='l2'))
+model.add(layers.Dropout(0.8))
+model.add(keras.layers.Dense(16, activation='relu', kernel_regularizer='l2'))
+model.add(layers.Dropout(0.8))
+model.add(keras.layers.Dense(6, activation='relu', kernel_regularizer='l2' ))
+model.add(layers.Dropout(0.8))
 model.add(layers.Dense(2, activation="sigmoid"))
 
 model.summary()
 
 loss = keras.losses.BinaryCrossentropy()
-optimizer = keras.optimizers.Adam()
+optimizer = keras.optimizers.Adam(learning_rate=1e-08)
+# optimizer = keras.optimizers.SGD(learning_rate=0.1)
+# optimizer = keras.optimizers.Adadelta(learning_rate=1e-04, rho=0.95, epsilon=1e-07)
 EarlyStoppingCallback = tf.keras.callbacks.EarlyStopping(monitor='loss', patience=3)
 
 model.compile(loss=loss, optimizer=optimizer, metrics='accuracy')
 
-text_unimodal = model.fit(train_padded, train_labels, epochs=100, validation_data=(val_padded, val_labels), verbose=1)
+text_unimodal = model.fit(train_padded,
+                          train_labels,
+                          epochs=EPOCHS,
+                          validation_data=(val_padded, val_labels),
+                          callbacks=[EarlyStoppingCallback],
+                          verbose=1)
 
-show_interactive_performance_plot(text_unimodal, 'text_unimodal', 'accuracy', 'val_accuracy')
+show_interactive_performance_plot(text_unimodal, 'text_unimodal_accuracy', 'accuracy', 'val_accuracy')
+show_interactive_performance_plot(text_unimodal, 'text_unimodal_loss', 'loss', 'val_loss')
+
 
 end_time = time.time()
 time_taken = end_time - start_time
 time_taken_minutes = round(time_taken/60, 3)
 
+loss, validation_set_accuracy = model.evaluate(val_padded, val_labels, verbose=1)
+print('Validation accuracy: {:5.2f}%'.format(100 * validation_set_accuracy))
+scores['validation_set_accuracy'] = round(validation_set_accuracy, 4)
 
 config['training_time'] = time_taken_minutes
 
@@ -132,7 +156,7 @@ with open('config.json', 'w') as fp:
 
 # --------------------------------------------------------------------------------------------------------------
 print('Starting Phase 1 Predictions')
-test_seen_original = pd.read_csv('/Users/amansolanki/PycharmProjects/hateful-memes-challenge/data/test_seen.csv')
+test_seen_original = pd.read_csv('/Users/amansolanki/PycharmProjects/hateful-memes-challenge/data/test_seen_lstm.csv')
 test_seen = test_seen_original.copy()
 
 test_seen['text'] = test_seen.text.map(remove_punctuations)
@@ -151,16 +175,19 @@ max_length = 20
 
 test_padded = pad_sequences(test_sequences, maxlen=max_length, padding="post", truncating="post")
 
-loss, acc = model.evaluate(test_padded, test_labels, verbose=1)
-print('Model, accuracy: {:5.2f}%'.format(100 * acc))
+loss, test_seen_accuracy = model.evaluate(test_padded, test_labels, verbose=1)
+print('Phase 1 accuracy: {:5.2f}%'.format(100 * test_seen_accuracy))
+scores['test_seen_accuracy'] = round(test_seen_accuracy, 4)
 
 preds = model.predict(test_padded)
 df_seen = pd.DataFrame(preds, columns=['label_0_confidence', 'label_1_confidence'])
 
-df_seen.to_csv('test_seen_predictions.csv', index=False)
+df_seen.to_csv('/Users/amansolanki/PycharmProjects/hateful-memes-challenge/src/text/predictions'
+                 '/test_seen_predications.csv', index=False)
 
+# --------------------------------------------------------------------------------------------------------------
 print('Starting Phase 2 Predictions')
-test_unseen_original = pd.read_csv('/Users/amansolanki/PycharmProjects/hateful-memes-challenge/data/test_unseen.csv')
+test_unseen_original = pd.read_csv('/Users/amansolanki/PycharmProjects/hateful-memes-challenge/data/test_unseen_lstm.csv')
 test_unseen = test_unseen_original.copy()
 
 test_unseen['text'] = test_unseen.text.map(remove_punctuations)
@@ -179,9 +206,14 @@ max_length = 20
 
 test_padded = pad_sequences(test_sequences, maxlen=max_length, padding="post", truncating="post")
 
-loss, acc = model.evaluate(test_padded, test_labels, verbose=1)
-print('Model, accuracy: {:5.2f}%'.format(100 * acc))
+loss, test_unseen_accuracy = model.evaluate(test_padded, test_labels, verbose=1)
+print('Phase 2 accuracy: {:5.2f}%'.format(100 * test_unseen_accuracy))
+scores['test_unseen_accuracy'] = round(test_unseen_accuracy, 4)
 
 preds = model.predict(test_padded)
 df_unseen = pd.DataFrame(preds, columns=['label_0_confidence', 'label_1_confidence'])
-df_unseen.to_csv('test_unseen_predications.csv', index=False)
+df_unseen.to_csv('/Users/amansolanki/PycharmProjects/hateful-memes-challenge/src/text/predictions'
+                 '/test_unseen_predications.csv', index=False)
+
+with open('scores.json', 'w') as fp:
+    json.dump(scores, fp, indent=4)

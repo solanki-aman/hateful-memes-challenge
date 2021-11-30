@@ -10,6 +10,20 @@
             </Attribute>
           </value>
         </entry>
+        <entry key="/src/image/predictions/test_seen_image.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/src/image/predictions/test_unseen_image.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
         <entry key="/src/text/predictions/test_seen_autonlp.csv">
           <value>
             <Attribute>
@@ -17,14 +31,28 @@
             </Attribute>
           </value>
         </entry>
-        <entry key="/src/text/test_seen_predictions.csv">
+        <entry key="/src/text/predictions/test_seen_predications.csv">
           <value>
             <Attribute>
               <option name="separator" value="," />
             </Attribute>
           </value>
         </entry>
-        <entry key="/src/text/test_unseen_predications.csv">
+        <entry key="/src/text/predictions/test_seen_predictions.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/src/text/predictions/test_unseen_autonlp.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/src/text/predictions/test_unseen_predications.csv">
           <value>
             <Attribute>
               <option name="separator" value="," />

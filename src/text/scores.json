@@ -1,0 +1,5 @@
+{
+    "validation_set_accuracy": 0.6588,
+    "test_seen_accuracy": 0.507,
+    "test_unseen_accuracy": 0.6265
+}

@@ -1,0 +1,19 @@
+{
+    "_num_labels": 2,
+    "_batch_size": 16,
+    "_model": "InceptionV3",
+    "train_datashape": [
+        6375,
+        224,
+        224,
+        3
+    ],
+    "test_datashape": [
+        2125,
+        224,
+        224,
+        3
+    ],
+    "epochs": 10,
+    "training_time": 17.375
+}
