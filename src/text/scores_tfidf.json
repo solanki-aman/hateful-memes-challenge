@@ -1,0 +1,8 @@
+{
+    "validation_baseline": 0.6529,
+    "validation_set_accuracy": 0.7459,
+    "test_seen_baseline": 0.51,
+    "test_seen_accuracy": 0.573,
+    "test_unseen_baseline": 0.625,
+    "test_unseen_accuracy": 0.6385
+}

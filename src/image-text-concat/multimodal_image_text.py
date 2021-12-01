@@ -24,7 +24,7 @@ scores = dict()
 image_path = '/Users/amansolanki/datasets/hateful-memes-images/'
 df = pd.read_csv('/Users/amansolanki/PycharmProjects/hateful-memes-challenge/data/train.csv')
 
-EPOCHS = 50
+EPOCHS = 5
 batch_size = 32
 
 # Features and Labels
@@ -148,7 +148,7 @@ lstm1 = keras.layers.LSTM(8, return_sequences=True, kernel_regularizer='l2')(emb
 lstm2 = keras.layers.LSTM(8, dropout=0.1, kernel_regularizer='l2')(lstm1)
 flatten = keras.layers.Flatten()(lstm2)
 dense1 = keras.layers.Dense(32, activation='relu', kernel_regularizer='l2')(flatten)
-dropout1 = keras.layers.Dropout(0.4)(dense1)
+dropout1 = keras.layers.Dropout(0.3)(dense1)
 dense3 = keras.layers.Dense(6, activation='relu', kernel_regularizer='l2')(dropout1)
 flatten = keras.layers.Flatten()(dense3)
 lstm_layer = keras.layers.Dense(6, activation='relu', kernel_regularizer='l2')(flatten)
@@ -184,7 +184,7 @@ keras.utils.plot_model(model, to_file='/Users/amansolanki/PycharmProjects/hatefu
                                       '/multimodal_image_text_architecture.png', dpi=300)
 
 loss = keras.losses.BinaryCrossentropy()
-optimizer = keras.optimizers.Adam(learning_rate=1e-05)
+optimizer = keras.optimizers.Adam(learning_rate=1e-06)
 # optimizer = keras.optimizers.Adadelta(learning_rate=1e-04, rho=0.95, epsilon=1e-07)
 
 losses = {

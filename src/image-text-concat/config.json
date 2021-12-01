@@ -1,9 +1,10 @@
 {
     "_num_labels": 2,
-    "_batch_size": 16,
+    "_batch_size": 32,
     "vocab_size": 11142,
+    "max_sentence_length": 70,
     "max_length": 20,
     "padding": "max_length",
-    "glove_matched": 7333,
-    "glove_missed": 899
+    "glove_matched": 7258,
+    "glove_missed": 823
 }

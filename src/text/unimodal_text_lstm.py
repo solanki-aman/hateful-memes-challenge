@@ -164,6 +164,14 @@ scores['validation_set_accuracy'] = round(validation_set_accuracy, 4)
 
 config['training_time'] = time_taken_minutes
 
+# Convert the model.
+converter = tf.lite.TFLiteConverter.from_keras_model(model)
+tflite_model = converter.convert()
+
+# Save the model.
+with open('image_model.tflite', 'wb') as f:
+    f.write(tflite_model)
+
 with open('config.json', 'w') as fp:
     json.dump(config, fp, indent=4)
 

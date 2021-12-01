@@ -10,6 +10,13 @@
             </Attribute>
           </value>
         </entry>
+        <entry key="/data/test_seen.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
         <entry key="/data/train.csv">
           <value>
             <Attribute>
@@ -18,6 +25,13 @@
           </value>
         </entry>
         <entry key="/src/image-text-concat/predictions/test_seen_multimodal.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/src/image-text-concat/predictions/test_unseen_multimodal.csv">
           <value>
             <Attribute>
               <option name="separator" value="," />
@@ -45,21 +59,14 @@
             </Attribute>
           </value>
         </entry>
-        <entry key="/src/text/predictions/test_seen_predications.csv">
-          <value>
-            <Attribute>
-              <option name="separator" value="," />
-            </Attribute>
-          </value>
-        </entry>
-        <entry key="/src/text/predictions/test_seen_predictions.csv">
-          <value>
-            <Attribute>
-              <option name="separator" value="," />
-            </Attribute>
-          </value>
-        </entry>
         <entry key="/src/text/predictions/test_seen_text.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/src/text/predictions/test_seen_text_tfidf.csv">
           <value>
             <Attribute>
               <option name="separator" value="," />
@@ -73,14 +80,14 @@
             </Attribute>
           </value>
         </entry>
-        <entry key="/src/text/predictions/test_unseen_predications.csv">
+        <entry key="/src/text/predictions/test_unseen_text.csv">
           <value>
             <Attribute>
               <option name="separator" value="," />
             </Attribute>
           </value>
         </entry>
-        <entry key="/src/text/predictions/test_unseen_text.csv">
+        <entry key="/src/text/predictions/test_unseen_text_tfidf.csv">
           <value>
             <Attribute>
               <option name="separator" value="," />
