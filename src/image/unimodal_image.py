@@ -6,7 +6,7 @@ import tensorflow as tf
 from sklearn.model_selection import train_test_split
 from tensorflow import keras
 from data_loader import DataLoader
-from image_utils import transfer_learning_model
+from image_utils import transfer_learning_model, hidden_layers_cnn
 from utils import get_image_arrays, show_interactive_performance_plot
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
@@ -18,18 +18,22 @@ scores = dict()
 
 image_path = '/Users/amansolanki/datasets/hateful-memes-images/'
 df = pd.read_csv('/Users/amansolanki/PycharmProjects/hateful-memes-challenge/data/train.csv')
+
 # Features and Labels
 image_column = df['image_id']
 image_arrays = get_image_arrays(image_column, image_path)
 label = df['label']
-batch_size = 16
-EPOCHS = 10
+batch_size = 32
+EPOCHS = 50
 
 config['_num_labels'] = label.nunique()
 config['_batch_size'] = batch_size
 
 # Train Test Split
 X_train, X_val, y_train, y_val = train_test_split(image_arrays, label, test_size=0.25, random_state=42, shuffle=True)
+
+validation_set_baseline = y_val.value_counts(normalize=True)[0]
+scores['validation_baseline'] = round(validation_set_baseline, 4)
 
 # Prepare Train Data
 train_labels = keras.utils.to_categorical(y_train, 2)
@@ -43,7 +47,8 @@ validation_batch_generator = DataLoader(image_array=X_val, labels=val_labels, ba
 
 # Model
 input_layer = keras.Input(shape=(224, 224, 3))
-hidden_layers = transfer_learning_model(keras.applications.InceptionV3, input_layer)
+hidden_layers = hidden_layers_cnn(input_layer)
+# hidden_layers = transfer_learning_model(keras.applications.ResNet152V2, input_layer)
 batch_normalization_1 = keras.layers.BatchNormalization()(hidden_layers)
 dense1 = keras.layers.Dense(128, activation='relu', kernel_regularizer='l2')(batch_normalization_1)
 batch_normalization_2 = keras.layers.BatchNormalization()(dense1)
@@ -52,9 +57,9 @@ label_branch = keras.layers.Dense(2, activation='sigmoid', name='label_output')(
 model = keras.models.Model(inputs=input_layer, outputs=[label_branch])
 model.summary()
 
-config['_model'] = 'InceptionV3'
+config['_model'] = 'Custom'
 
-optimizer = keras.optimizers.Adam()
+optimizer = keras.optimizers.Adam(learning_rate=1e-05)
 loss = keras.losses.BinaryCrossentropy()
 EarlyStoppingCallback = tf.keras.callbacks.EarlyStopping(monitor='loss', patience=3)
 
@@ -71,6 +76,8 @@ gpu = tf.config.experimental.list_physical_devices('GPU')
 print(gpu)
 print('\n')
 
+# image_unimodel = model.fit(X_train, train_labels, epochs=EPOCHS, verbose=1, validation_split=0.1)
+
 image_unimodel = model.fit(training_batch_generator,
                            steps_per_epoch=int(X_train.shape[0] // batch_size),
                            epochs=EPOCHS,
@@ -82,6 +89,16 @@ image_unimodel = model.fit(training_batch_generator,
 
 show_interactive_performance_plot(image_unimodel, 'image_unimodal_accuracy', 'accuracy', 'val_accuracy')
 show_interactive_performance_plot(image_unimodel, 'image_unimodal_loss', 'loss', 'val_loss')
+
+model_save_directory = '/Users/amansolanki/PycharmProjects/hateful-memes-challenge/src/image/model'
+
+# Convert the model.
+converter = tf.lite.TFLiteConverter.from_keras_model(model)
+tflite_model = converter.convert()
+
+# Save the model.
+with open('image_model.tflite', 'wb') as f:
+    f.write(tflite_model)
 
 end_time = time.time()
 time_taken = end_time - start_time
@@ -105,6 +122,8 @@ test_seen = test_seen_original.copy()
 # Features and Labels
 test_seen_image_column = test_seen['image_id']
 test_seen_label = test_seen['label']
+test_seen_baseline = test_seen_label.value_counts(normalize=True)[0]
+scores['test_seen_baseline'] = round(test_seen_baseline, 4)
 
 # Prepare Data for Evaluation
 test_seen_image_arrays = get_image_arrays(test_seen_image_column, image_path)
@@ -119,7 +138,8 @@ scores['test_seen_accuracy'] = round(test_seen_accuracy, 4)
 preds = model.predict(test_seen_image_arrays)
 df_seen = pd.DataFrame(preds, columns=['label_0_confidence', 'label_1_confidence'])
 
-df_seen.to_csv('/Users/amansolanki/PycharmProjects/hateful-memes-challenge/src/image/predictions/test_seen_image.csv', index=False)
+df_seen.to_csv('/Users/amansolanki/PycharmProjects/hateful-memes-challenge/src/image/predictions/test_seen_image.csv',
+               index=False)
 
 # --------------------------------------------------------------------------------------------------------------
 print('Starting Phase 2 Predictions')
@@ -129,21 +149,24 @@ test_unseen = test_unseen_original.copy()
 # Features and Labels
 test_unseen_image_column = test_unseen['image_id']
 test_unseen_label = test_unseen['label']
+test_unseen_baseline = test_unseen_label.value_counts(normalize=True)[0]
+scores['test_unseen_baseline'] = round(test_unseen_baseline, 4)
 
 # Prepare Data for Evaluation
 test_unseen_image_arrays = get_image_arrays(test_unseen_image_column, image_path)
 labels_unseen = keras.utils.to_categorical(test_unseen_label, 2)
 
 # Prepare Phase 2 dataset dataloader.
-# test_unseen_batch_generator = DataLoader(image_array=test_unseen_image_arrays, labels=labels_unseen, batch_size=batch_size)
 
-loss, test_unseen_accuracy = model.evaluate(test_unseen_image_arrays,labels_unseen, verbose=1)
+loss, test_unseen_accuracy = model.evaluate(test_unseen_image_arrays, labels_unseen, verbose=1)
 scores['test_unseen_accuracy'] = round(test_unseen_accuracy, 4)
 
 preds = model.predict(test_unseen_image_arrays)
 df_unseen = pd.DataFrame(preds, columns=['label_0_confidence', 'label_1_confidence'])
 
-df_unseen.to_csv('/Users/amansolanki/PycharmProjects/hateful-memes-challenge/src/image/predictions/test_unseen_image.csv', index=False)
+df_unseen.to_csv(
+    '/Users/amansolanki/PycharmProjects/hateful-memes-challenge/src/image/predictions/test_unseen_image.csv',
+    index=False)
 
 with open('scores.json', 'w') as fp:
     json.dump(scores, fp, indent=4)
