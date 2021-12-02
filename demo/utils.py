@@ -47,9 +47,10 @@ def get_image_predictions(image_array, model_path):
 
     return output_data
 
+
 def show_image(image_id, image_path):
     image_id_dict = dict(image_id).values()
     image_id_string = list(image_id_dict)[0]
     img = mpimg.imread(image_path + image_id_string)
-    plt.imshow(img)
+    plt.imshow(img, interpolation='nearest', aspect='auto')
     plt.show()
