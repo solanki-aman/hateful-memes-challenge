@@ -1,11 +1,15 @@
 import json
 import pandas as pd
 from lightgbm import LGBMClassifier
+from sklearn.compose import ColumnTransformer
 from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score
+import pickle
+
+from sklearn.pipeline import Pipeline
 
 scores = dict()
 config = dict()
@@ -20,6 +24,7 @@ config['_num_labels'] = label.nunique()
 X_train, X_val, y_train, y_val = train_test_split(text, label, test_size=0.1, random_state=42, shuffle=True)
 validation_set_baseline = y_val.value_counts(normalize=True)[0]
 scores['validation_baseline'] = round(validation_set_baseline, 4)
+
 
 # Transform Train and Test Data
 vectorizer = TfidfVectorizer(analyzer='word')
@@ -37,7 +42,16 @@ classifier = LGBMClassifier(objective='binary',
                             random_state=42,
                             n_jobs=-1)
 
+
 model = classifier.fit(X_train_transformed, y_train)
+
+# save the model to disk
+filename = 'tfidf_model.pickle'
+pickle.dump(model, open(filename, 'wb'))
+
+# save the model to disk
+filename = 'tfidf_vectorizer.pickle'
+pickle.dump(vectorizer, open(filename, 'wb'))
 
 # Score
 y_pred = model.predict(X_val_transformed)
