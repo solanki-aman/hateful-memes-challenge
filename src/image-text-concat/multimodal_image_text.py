@@ -176,7 +176,7 @@ merged_dense1 = keras.layers.Dense(128, activation='relu', kernel_regularizer=tf
 merged_batch_normalization_1 = keras.layers.BatchNormalization()(merged_dense1)
 merged_dense2 = keras.layers.Dense(64, activation='relu', kernel_regularizer=tf.keras.regularizers.l2(0.1))(merged_batch_normalization_1)
 merged_dropout = keras.layers.Dropout(0.6)(merged_dense2)
-merged_dense3 = keras.layers.Dense(32, activation='relu', kernel_regularizer=tf.keras.regularizers.l2(0.1))(merged_dropout)
+merged_dense3 = keras.layers.Dense(8, activation='relu', kernel_regularizer=tf.keras.regularizers.l2(0.1))(merged_dropout)
 model_output = keras.layers.Dense(2, activation='sigmoid', name='label_output')(merged_dense3)
 model = keras.models.Model(inputs=[image_model, lstm_model], outputs=[model_output])
 
