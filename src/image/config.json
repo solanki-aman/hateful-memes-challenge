@@ -1,7 +1,7 @@
 {
     "_num_labels": 2,
     "_batch_size": 32,
-    "_model": "InceptionV3",
+    "_model": "Custom",
     "train_datashape": [
         6375,
         224,
@@ -15,5 +15,5 @@
         3
     ],
     "epochs": 50,
-    "training_time": 78.857
+    "training_time": 159.357
 }

@@ -21,10 +21,10 @@ start_time = time.time()
 config = dict()
 scores = dict()
 
-image_path = '/Users/amansolanki/datasets/hateful-memes-images/'
-df = pd.read_csv('/Users/amansolanki/PycharmProjects/hateful-memes-challenge/data/train.csv')
+image_path = '/home/amansolanki/datasets/hateful-memes-images/'
+df = pd.read_csv('/home/amansolanki/PycharmProjects/hateful-memes-challenge/data/train.csv')
 
-EPOCHS = 5
+EPOCHS = 50
 batch_size = 32
 
 # Features and Labels
@@ -37,16 +37,18 @@ config['_num_labels'] = label.nunique()
 config['_batch_size'] = batch_size
 
 # Train Test Split - Text
-X_train_text, X_val_text, y_train_text, y_val_text = train_test_split(text, label, test_size=0.2, random_state=42,
+X_train_text, X_val_text, y_train_text, y_val_text = train_test_split(text, label, test_size=0.25, random_state=42,
                                                                       shuffle=True)
 # Train Test Split - Image
-X_train_image, X_val_image, y_train_image, y_val_image = train_test_split(image_arrays, label, test_size=0.2,
+X_train_image, X_val_image, y_train_image, y_val_image = train_test_split(image_arrays, label, test_size=0.25,
                                                                           random_state=42, shuffle=True)
 
-text_validation_set_baseline = y_val_text.value_counts(normalize=True)[0]
-image_validation_set_baseline = y_val_image.value_counts(normalize=True)[0]
+training_set_baseline = y_train_text.value_counts(normalize=True)[0]
+validation_set_baseline = y_val_text.value_counts(normalize=True)[0]
 
-scores['validation_baseline_accuracy'] = round(image_validation_set_baseline, 4)
+
+scores['training_baseline_accuracy'] = round(training_set_baseline, 4)
+scores['validation_baseline_accuracy'] = round(validation_set_baseline, 4)
 
 # ----------------------------------------------------------------------------------------------------------------------
 # Text Model Preprocessing
@@ -60,7 +62,7 @@ temp_test = X_train_text.map(remove_punctuations)
 X_val_clean = temp_test.map(remove_stopwords)
 
 # Build Vocabulary
-word_set = build_word_set(X_train_text.to_list())
+word_set = build_word_set(X_train_clean.to_list())
 num_unique_words = len(word_set)
 config['vocab_size'] = num_unique_words
 
@@ -82,7 +84,7 @@ val_sequences = tokenizer.texts_to_sequences(val_sentences)
 
 # Create Padded Train and Validation Sequences for Model Training
 sentence_max_length = max([len(sentence.split()) for sentence in train_sentences])  # 47
-max_length = 20
+max_length = 30
 train_padded = pad_sequences(train_sequences, maxlen=max_length, padding="post", truncating="post")
 val_padded = pad_sequences(val_sequences, maxlen=max_length, padding="post", truncating="post")
 config['max_sentence_length'] = sentence_max_length
@@ -91,7 +93,7 @@ config["padding"] = "max_length"
 
 # Glove Word Embeddings
 # Embedding Transfer Learning
-path_to_glove_file = '/Users/amansolanki/datasets/glove.6B.100d.txt'
+path_to_glove_file = '/home/amansolanki/datasets/glove.42B.300d.txt'
 
 embeddings_index = {}
 with open(path_to_glove_file) as f:
@@ -101,7 +103,7 @@ with open(path_to_glove_file) as f:
         embeddings_index[word] = coefs
 
 num_tokens = num_unique_words + 2
-embedding_dim = 100
+embedding_dim = 300
 hits = 0
 misses = 0
 
@@ -147,8 +149,8 @@ embedding = keras.layers.Embedding(input_dim=num_tokens,
 lstm1 = keras.layers.LSTM(8, return_sequences=True, kernel_regularizer='l2')(embedding)
 lstm2 = keras.layers.LSTM(8, dropout=0.1, kernel_regularizer='l2')(lstm1)
 flatten = keras.layers.Flatten()(lstm2)
-dense1 = keras.layers.Dense(32, activation='relu', kernel_regularizer='l2')(flatten)
-dropout1 = keras.layers.Dropout(0.3)(dense1)
+dense1 = keras.layers.Dense(16, activation='relu', kernel_regularizer='l2')(flatten)
+dropout1 = keras.layers.Dropout(0.2)(dense1)
 dense3 = keras.layers.Dense(6, activation='relu', kernel_regularizer='l2')(dropout1)
 flatten = keras.layers.Flatten()(dense3)
 lstm_layer = keras.layers.Dense(6, activation='relu', kernel_regularizer='l2')(flatten)
@@ -158,33 +160,33 @@ lstm_layer = keras.layers.Dense(6, activation='relu', kernel_regularizer='l2')(f
 # ----------------------------------------------------------------------------------------------------------------------
 image_model = keras.Input(shape=(224, 224, 3), name='image_model_input')
 # hidden_layers = hidden_layers_cnn(image_model)
-hidden_layers = transfer_learning_model(keras.applications.ResNet50, image_model)
+hidden_layers = hidden_layers_cnn(image_model)
 batch_normalization_1 = keras.layers.BatchNormalization()(hidden_layers)
-dense1 = keras.layers.Dense(128, activation='relu', kernel_regularizer='l2')(batch_normalization_1)
+dense1 = keras.layers.Dense(128, activation='relu', kernel_regularizer=tf.keras.regularizers.l2(0.1))(batch_normalization_1)
 batch_normalization_2 = keras.layers.BatchNormalization()(dense1)
-dense2 = keras.layers.Dense(64, activation='relu', kernel_regularizer='l2')(batch_normalization_2)
+dense2 = keras.layers.Dense(64, activation='relu', kernel_regularizer=tf.keras.regularizers.l2(0.1))(batch_normalization_2)
 flatten = keras.layers.Flatten()(dense2)
-image_layer = keras.layers.Dense(32, activation='relu', kernel_regularizer='l2')(flatten)
+image_layer = keras.layers.Dense(32, activation='relu', kernel_regularizer=tf.keras.regularizers.l2(0.1))(flatten)
 
 # ----------------------------------------------------------------------------------------------------------------------
 # Multimodal Model
 # ----------------------------------------------------------------------------------------------------------------------
 merged_input = keras.layers.concatenate([lstm_layer, image_layer])
-merged_dense1 = keras.layers.Dense(16, activation='relu', kernel_regularizer='l2')(merged_input)
+merged_dense1 = keras.layers.Dense(128, activation='relu', kernel_regularizer=tf.keras.regularizers.l2(0.1))(merged_input)
 merged_batch_normalization_1 = keras.layers.BatchNormalization()(merged_dense1)
-merged_dense2 = keras.layers.Dense(8, activation='relu', kernel_regularizer='l2')(merged_batch_normalization_1)
+merged_dense2 = keras.layers.Dense(64, activation='relu', kernel_regularizer=tf.keras.regularizers.l2(0.1))(merged_batch_normalization_1)
 merged_dropout = keras.layers.Dropout(0.6)(merged_dense2)
-merged_dense3 = keras.layers.Dense(4, activation='relu', kernel_regularizer='l2')(merged_dropout)
+merged_dense3 = keras.layers.Dense(32, activation='relu', kernel_regularizer=tf.keras.regularizers.l2(0.1))(merged_dropout)
 model_output = keras.layers.Dense(2, activation='sigmoid', name='label_output')(merged_dense3)
 model = keras.models.Model(inputs=[image_model, lstm_model], outputs=[model_output])
 
 model.summary()
 
-keras.utils.plot_model(model, to_file='/Users/amansolanki/PycharmProjects/hateful-memes-challenge/plots'
+keras.utils.plot_model(model, to_file='/home/amansolanki/PycharmProjects/hateful-memes-challenge/plots'
                                       '/multimodal_image_text_architecture.png', dpi=300)
 
 loss = keras.losses.BinaryCrossentropy()
-optimizer = keras.optimizers.Adam(learning_rate=1e-06)
+optimizer = keras.optimizers.Adam(learning_rate=1e-08)
 # optimizer = keras.optimizers.Adadelta(learning_rate=1e-04, rho=0.95, epsilon=1e-07)
 
 losses = {
@@ -229,12 +231,15 @@ val_X_multi_input = {
     'lstm_model_input': val_padded
 }
 
+loss, training_accuracy = model.evaluate(train_X_multi_input, train_labels, verbose=1)
+scores['training_accuracy'] = round(training_accuracy, 4)
+
 loss, validation_accuracy = model.evaluate(val_X_multi_input, val_labels, verbose=1)
 scores['validation_accuracy'] = round(validation_accuracy, 4)
 
 # --------------------------------------------------------------------------------------------------------------
 print('Starting Phase 1 Predictions')
-test_seen_original = pd.read_csv('/Users/amansolanki/PycharmProjects/hateful-memes-challenge/data/test_seen.csv')
+test_seen_original = pd.read_csv('/home/amansolanki/PycharmProjects/hateful-memes-challenge/data/test_seen.csv')
 test_seen = test_seen_original.copy()
 
 test_seen['text'] = test_seen.text.map(remove_punctuations)
@@ -264,12 +269,12 @@ scores['test_seen_accuracy'] = round(test_seen_accuracy, 4)
 preds = model.predict(test_seen_multi_input)
 df_seen = pd.DataFrame(preds, columns=['label_0_confidence', 'label_1_confidence'])
 
-df_seen.to_csv('/Users/amansolanki/PycharmProjects/hateful-memes-challenge/src/image-text-concat/predictions'
+df_seen.to_csv('/home/amansolanki/PycharmProjects/hateful-memes-challenge/src/image-text-concat/predictions'
                '/test_seen_multimodal.csv', index=False)
 
 # --------------------------------------------------------------------------------------------------------------
 print('Starting Phase 2 Predictions')
-test_unseen_original = pd.read_csv('/Users/amansolanki/PycharmProjects/hateful-memes-challenge/data/test_unseen.csv')
+test_unseen_original = pd.read_csv('/home/amansolanki/PycharmProjects/hateful-memes-challenge/data/test_unseen.csv')
 test_unseen = test_unseen_original.copy()
 
 test_unseen['text'] = test_unseen.text.map(remove_punctuations)
@@ -299,7 +304,7 @@ scores['test_unseen_accuracy'] = round(test_unseen_accuracy, 4)
 preds = model.predict(test_unseen_multi_input)
 df_unseen = pd.DataFrame(preds, columns=['label_0_confidence', 'label_1_confidence'])
 
-df_unseen.to_csv('/Users/amansolanki/PycharmProjects/hateful-memes-challenge/src/image-text-concat/predictions'
+df_unseen.to_csv('/home/amansolanki/PycharmProjects/hateful-memes-challenge/src/image-text-concat/predictions'
                  '/test_unseen_multimodal.csv', index=False)
 
 with open('config.json', 'w') as fp:

@@ -1,8 +1,10 @@
 {
+    "training_baseline": 0.6428,
     "validation_baseline": 0.6508,
-    "validation_set_accuracy": 0.6433,
+    "training_set_accuracy": 0.7316,
+    "validation_set_accuracy": 0.6372,
     "test_seen_baseline": 0.51,
-    "test_seen_accuracy": 0.507,
+    "test_seen_accuracy": 0.519,
     "test_unseen_baseline": 0.625,
-    "test_unseen_accuracy": 0.6145
+    "test_unseen_accuracy": 0.603
 }

@@ -16,8 +16,8 @@ start_time = time.time()
 config = dict()
 scores = dict()
 
-image_path = '/Users/amansolanki/datasets/hateful-memes-images/'
-df = pd.read_csv('/Users/amansolanki/PycharmProjects/hateful-memes-challenge/data/train.csv')
+image_path = '/home/amansolanki/datasets/hateful-memes-images/'
+df = pd.read_csv('/home/amansolanki/PycharmProjects/hateful-memes-challenge/data/train.csv')
 
 # Features and Labels
 image_column = df['image_id']
@@ -32,6 +32,8 @@ config['_batch_size'] = batch_size
 # Train Test Split
 X_train, X_val, y_train, y_val = train_test_split(image_arrays, label, test_size=0.25, random_state=42, shuffle=True)
 
+training_set_baseline = y_train.value_counts(normalize=True)[0]
+scores['training_baseline'] = round(training_set_baseline, 4)
 validation_set_baseline = y_val.value_counts(normalize=True)[0]
 scores['validation_baseline'] = round(validation_set_baseline, 4)
 
@@ -76,8 +78,9 @@ gpu = tf.config.experimental.list_physical_devices('GPU')
 print(gpu)
 print('\n')
 
-# image_unimodel = model.fit(X_train, train_labels, epochs=EPOCHS, verbose=1, validation_split=0.1)
+image_unimodel = model.fit(X_train, train_labels, epochs=EPOCHS, verbose=1, validation_split=0.1)
 
+'''
 image_unimodel = model.fit(training_batch_generator,
                            steps_per_epoch=int(X_train.shape[0] // batch_size),
                            epochs=EPOCHS,
@@ -86,11 +89,12 @@ image_unimodel = model.fit(training_batch_generator,
                            validation_steps=int(X_val.shape[0] // batch_size),
                            callbacks=[EarlyStoppingCallback]
                            )
+'''
 
 show_interactive_performance_plot(image_unimodel, 'image_unimodal_accuracy', 'accuracy', 'val_accuracy')
 show_interactive_performance_plot(image_unimodel, 'image_unimodal_loss', 'loss', 'val_loss')
 
-model_save_directory = '/Users/amansolanki/PycharmProjects/hateful-memes-challenge/src/image/model'
+model_save_directory = '/home/amansolanki/PycharmProjects/hateful-memes-challenge/src/image/model'
 
 # Convert the model.
 converter = tf.lite.TFLiteConverter.from_keras_model(model)
@@ -107,8 +111,9 @@ time_taken_minutes = round(time_taken / 60, 3)
 config['epochs'] = EPOCHS
 config['training_time'] = time_taken_minutes
 
+loss, training_set_accuracy = model.evaluate(X_train, train_labels, verbose=1)
+scores['training_set_accuracy'] = round(training_set_accuracy, 4)
 loss, validation_set_accuracy = model.evaluate(X_val, val_labels, verbose=1)
-print('Validation accuracy: {:5.2f}%'.format(100 * validation_set_accuracy))
 scores['validation_set_accuracy'] = round(validation_set_accuracy, 4)
 
 with open('config.json', 'w') as fp:
@@ -116,7 +121,7 @@ with open('config.json', 'w') as fp:
 
 # --------------------------------------------------------------------------------------------------------------
 print('Starting Phase 1 Predictions')
-test_seen_original = pd.read_csv('/Users/amansolanki/PycharmProjects/hateful-memes-challenge/data/test_seen.csv')
+test_seen_original = pd.read_csv('/home/amansolanki/PycharmProjects/hateful-memes-challenge/data/test_seen.csv')
 test_seen = test_seen_original.copy()
 
 # Features and Labels
@@ -138,12 +143,12 @@ scores['test_seen_accuracy'] = round(test_seen_accuracy, 4)
 preds = model.predict(test_seen_image_arrays)
 df_seen = pd.DataFrame(preds, columns=['label_0_confidence', 'label_1_confidence'])
 
-df_seen.to_csv('/Users/amansolanki/PycharmProjects/hateful-memes-challenge/src/image/predictions/test_seen_image.csv',
+df_seen.to_csv('/home/amansolanki/PycharmProjects/hateful-memes-challenge/src/image/predictions/test_seen_image.csv',
                index=False)
 
 # --------------------------------------------------------------------------------------------------------------
 print('Starting Phase 2 Predictions')
-test_unseen_original = pd.read_csv('/Users/amansolanki/PycharmProjects/hateful-memes-challenge/data/test_unseen.csv')
+test_unseen_original = pd.read_csv('/home/amansolanki/PycharmProjects/hateful-memes-challenge/data/test_unseen.csv')
 test_unseen = test_unseen_original.copy()
 
 # Features and Labels
@@ -165,7 +170,7 @@ preds = model.predict(test_unseen_image_arrays)
 df_unseen = pd.DataFrame(preds, columns=['label_0_confidence', 'label_1_confidence'])
 
 df_unseen.to_csv(
-    '/Users/amansolanki/PycharmProjects/hateful-memes-challenge/src/image/predictions/test_unseen_image.csv',
+    '/home/amansolanki/PycharmProjects/hateful-memes-challenge/src/image/predictions/test_unseen_image.csv',
     index=False)
 
 with open('scores.json', 'w') as fp:

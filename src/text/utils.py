@@ -68,7 +68,7 @@ def show_interactive_performance_plot(model, title: str, training_metric: str, v
             color="Black"
         )
     )
-    path = '/Users/amansolanki/PycharmProjects/hateful-memes-challenge/plots/'
+    path = '/home/amansolanki/PycharmProjects/hateful-memes-challenge/plots/'
     filename = path + title + '.jpeg'
     fig.write_image(filename, width=1920, height=1080, scale=2.5)
 
