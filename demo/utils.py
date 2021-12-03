@@ -1,9 +1,6 @@
-import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-import plotly.graph_objects as go
 from progressbar import ProgressBar
-import re
 import matplotlib.image as mpimg
 import tensorflow as tf
 from tensorflow.keras.preprocessing.image import img_to_array, load_img
