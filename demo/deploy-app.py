@@ -6,9 +6,9 @@ import pickle
 from utils import get_image_arrays, get_image_predictions, show_image
 
 st.title('Hateful Memes Classification')
-image_path = '/demo/demo_data/images/'
-demo_data = pd.read_csv('/demo/demo_data/demo_data.csv')
-TFLITE_FILE_PATH = '/demo/models/image_model.tflite'
+image_path = 'demo_data/images/'
+demo_data = pd.read_csv('demo_data/demo_data.csv')
+TFLITE_FILE_PATH = 'models/image_model.tflite'
 
 demo_data = demo_data.sample(1)
 y_true = demo_data['label']
@@ -28,8 +28,8 @@ print('Image Prediction Probabilities:')
 print(image_prediction)
 
 # TFIDF Model
-model = '/demo/models/tfidf_model.pickle'
-vectorizer = '/demo/models/tfidf_vectorizer.pickle'
+model = 'models/tfidf_model.pickle'
+vectorizer = 'models/tfidf_vectorizer.pickle'
 tfidf_model = pickle.load(open(model, 'rb'))
 tfidf_vectorizer = pickle.load(open(vectorizer, 'rb'))
 transformed_text = tfidf_vectorizer.transform(text)
