@@ -7,7 +7,8 @@ from utils import get_image_arrays, get_image_predictions, show_image
 
 st.title('Hateful Memes Classification')
 image_path = './demo_data/images/'
-demo_data = pd.read_csv('./demo_data/demo_data.csv')
+demo_data_file = 'https://github.com/solanki-aman/hateful-memes-challenge/blob/408bc10e60f7ace42d012bfa9a9d650a549f2c45/demo/demo_data/demo_data.csv'
+demo_data = pd.read_csv(demo_data_file)
 TFLITE_FILE_PATH = './models/image_model.tflite'
 
 demo_data = demo_data.sample(1)
